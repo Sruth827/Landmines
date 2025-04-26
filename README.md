@@ -1,4 +1,4 @@
-#Game Prototype : **Behind Enemy Mines**
+##Game Prototype : **Behind Enemy Mines**
 A top-down survival game where players must navigate treacherous terrain, avoid deadly mines, and survive the battlefield using strategic movement and a spotlight effect(still fixing).
 
 ## Features
