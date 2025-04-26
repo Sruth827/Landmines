@@ -2,96 +2,141 @@
 #include <raylib.h>
 #include "game.h"
 #include <iostream>
+#include "playerPosition.h"
 
-Game::Game(Grid& grid) : Player(grid), grid(grid) {
-	cellSize = 20; 
+Game::Game(Grid& grid) : grid(grid) {
+	Player = std::make_unique<playerPosition>(grid, *this);
+	cellSize = 20;
 	gameGrid = grid.GetGameGrid();
 	gameOver = false;
+	soundPlayed = false;
+	loopTime = 5.0f;
+	lastPlayTime = 0.0f;
+	ambientTimer = 0.0f;
+
+	InitAudioDevice();
+	LoadSounds();
+	camera.target = Vector2{ (float)Player->row, (float)Player->column };
+	camera.offset = Vector2{ 400.0f, 300.0f };  // centered on screen
+	camera.rotation = 0.0f;
+	camera.zoom = 2.5f; 
+
 }
+
+void Game::LoadSounds() {
+	explosion = LoadSound("sfx/hq-explosion.ogg");
+	death = LoadSound("sfx/scream.ogg");
+	titleMusic = LoadMusicStream("sfx/titlemusic.wav");
+	ambientSound = LoadSound("sfx/ambient war sfx.ogg");
+	detector = LoadSound("sfx/detectorsound.wav");
+	SetSoundVolume(ambientSound, 0.6f);
+	SetSoundVolume(explosion, 0.6f);
+	SetMusicVolume(titleMusic, 0.2f);	
+}
+
 
 void Game::Draw()
 {
 	if (gameOver) {
-		//Draw Gameover
+
 	}
 	else {
 		grid.Draw();
-		Player.Draw();
+		Player->Draw();
 	}
 }
 
-
-void Game::HandleInput() {
-	if (gameOver) {
-		if (IsKeyPressed(KEY_R)) {
-			Player.Respawn(grid);
-			gameOver = false;
-		}
-		return;
-	}
-	int keyPressed = GetKeyPressed();
-	switch (keyPressed) {
-	case KEY_LEFT:
-		MovePlayerLeft();
-		break;
-	case KEY_RIGHT:
-		MovePlayerRight();
-		break;
-	case KEY_DOWN:
-		MovePlayerDown();
-		break;
-	case KEY_UP:
-		MovePlayerUp();
-		break;
-	}
-}
 
 void Game::Update()
 {
-	if (gameGrid[Player.row][Player.column] == 1) {  // If player hits a mine
+	if (gameGrid[Player->row][Player->column] == 1) {  // if player hits a mine
 		gameOver = true;
 		std::cerr << "Game Over! Press R to Respawn" << std::endl;
 	}
-}
-
-void Game::MovePlayerLeft()
-{
-	if (Player.column > 0 && Player.column < gameGrid[0].size()) {
-		Player.column -= 1;
-		Update();
+	if (gameOver && !soundPlayed) {
+		PlaySound(death);
+		PlaySound(explosion);
+		soundPlayed = true;  // mark that sound has played
 	}
-}
 
-void Game::MovePlayerRight()
-{
-	if (Player.column >= 0 && Player.column < gameGrid[0].size() - 1) {
-		Player.column += 1;
-		Update();
-
+	if (gameOver && IsKeyPressed(KEY_R)) {
+		Player->Respawn(grid);
+		gameOver = false;
+		soundPlayed = false;  // Reset sound trigger for next death
 	}
-}
+	
+	if (!gameOver) {
+		//linear interpolation 
+		Player -> HandleInput();
+		CheckForMineAhead();
+		camera.target.x += (Player->column * cellSize - camera.target.x) * 0.1f;
+		camera.target.y += (Player->row * cellSize - camera.target.y) * 0.1f;
 
-void Game::MovePlayerDown()
-{
-	if (Player.row >= 0 && Player.row < gameGrid.size() - 1) {
-		Player.row += 1;
-		Update();
+		UpdateMusicStream(titleMusic);
+		if (!IsMusicStreamPlaying(titleMusic)) {
+			PlayMusicStream(titleMusic);
+		}
+		if (!IsSoundPlaying(ambientSound)) {
+			PlaySound(ambientSound);
+		}
+			
 	}
-}
-
-void Game::MovePlayerUp(){
-	if (Player.row > 0 && Player.row < gameGrid.size()) {
-		Player.row -= 1;
-		Update();
+	else {
+		StopMusicStream(titleMusic);
 	}
+
 }
 
-void Game::CheckCollision(playerPosition& player, const Grid& grid) {
+
+
+/*void Game::CheckCollision(playerPosition& player, const Grid& grid) {
 	const std::vector<std::vector<int>>& gameGrid = grid.GetGameGrid();
 
-	if (gameGrid[player.row][player.column] == 1) {  // If player hits a mine
-		std::cerr << "Game Over! Respawning player..." << std::endl;
-		player.Respawn(grid);
+	// Ensure row and column are within bounds
+	if (player.row >= 0 && player.row < gameGrid.size() &&
+		player.column >= 0 && player.column < gameGrid[0].size()) {
+
+		if (gameGrid[player.row][player.column] == 1) {  // If player hits a mine
+			std::cerr << "Game Over! Respawning player..." << std::endl;
+			player.Respawn(grid);
+		}
 	}
 }
+*/
+
+void Game::CheckForMineAhead() {
+	std::map<playerPosition::Direction, Vector2> directionOffsets = {
+		{playerPosition::Direction::UP,    {0, -1}},
+		{playerPosition::Direction::DOWN,  {0, 1}},
+		{playerPosition::Direction::LEFT,  {-1, 0}},
+		{playerPosition::Direction::RIGHT, {1, 0}}
+	};
+
+	Vector2 offset = directionOffsets[Player->playerDirection];
+	int nextRow = Player->row + (int)offset.y;
+	int nextCol = Player->column + (int)offset.x;
+
+	if (nextRow >= 0 && nextRow < grid.getRows() &&
+		nextCol >= 0 && nextCol < grid.getCols()) {
+
+		if (grid.GetGameGrid()[nextRow][nextCol] == 1) {
+			if (!IsSoundPlaying(detector)) {
+				PlaySound(detector);
+				std::cout << "Mine detected! Playing sound...\n";
+
+			}
+		}
+		else {
+			if (IsSoundPlaying(detector)) {
+				StopSound(detector);
+				std::cout << "No mine ahead! Stopping sound...\n";
+
+			}
+		}
+	}
+}
+
+
+
+
 
