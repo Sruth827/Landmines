@@ -1,25 +1,39 @@
 #pragma once
 #include <vector>
 #include <map>
-#include "playerPosition.h"
+#include <memory>
 #include "grid.h"
-#include "game.h"
+
+class playerPosition;
 
 class Game {
 public:
 	Game(Grid& grid);
+	playerPosition& GetPlayer() { return *Player; }
+	void LoadSounds();
 	void Draw();
-	void HandleInput();
 	void Update(); 
 	bool gameOver; 
+
+	Camera2D camera;
+	Vector2 playerCameraPosition;
+
 private:
-	Grid grid; 
-	playerPosition Player;
-	void MovePlayerLeft();
-	void MovePlayerRight();
-	void MovePlayerDown();
-	void MovePlayerUp();
-	void CheckCollision(playerPosition& player, const Grid& grid);
+	Grid& grid; 
+	std::unique_ptr<playerPosition> Player;
+	//void CheckCollision(playerPosition& player, const Grid& grid);
+	void CheckForMineAhead(); 
 	int cellSize;
 	std::vector<std::vector<int>>gameGrid;
+	
+	bool soundPlayed;
+	Sound explosion;
+	Sound death;
+	Sound ambientSound;
+	Sound detector;
+	Music titleMusic;
+
+	float loopTime;
+	float lastPlayTime; 
+	float ambientTimer;
 };

@@ -13,6 +13,8 @@ public:
 	int getCols() const;
 	int getCellSize() const; 
 	const std::vector<std::vector<int>>& GetGameGrid() const;
+	std::vector<Vector2> GetGeneratedPoints() const;
+	Texture2D ground;
 
 
 private:
@@ -21,6 +23,7 @@ private:
 	int cellSize;
 	std::vector<std::vector<int>> gameGrid;
 	std::set<std::pair<int, int>> generatedPoints;
+	
 	
 	
 };

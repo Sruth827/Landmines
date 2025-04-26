@@ -23,11 +23,11 @@ std::set<std::pair<int, int>> minePosition::SetMinePositions()
 	std::uniform_int_distribution<> distX(0, this->numRows - 1);
 	std::uniform_int_distribution<> distY(0, this->numCols - 1);
 
-	// Use a set to store unique points
+	// use a set to store unique points
 
-	const int numMines = 250; // Change this to the desired number of points
+	const int numMines = 250; // change this to the desired number of points
 	std::set< std::pair<int, int >> mines;
-	// Check if point already exists
+	// check if point already exists
 
 
 	while (static_cast<int>(mines.size()) < numMines) {
