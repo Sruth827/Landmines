@@ -3,9 +3,11 @@
 #include "game.h"
 #include <iostream>
 #include "playerPosition.h"
+#include "AirRaid.h"
 
 Game::Game(Grid& grid) : grid(grid) {
 	Player = std::make_unique<playerPosition>(grid, *this);
+	this->spawnAirRaid();
 	cellSize = 20;
 	gameGrid = grid.GetGameGrid();
 	gameOver = false;
@@ -21,6 +23,11 @@ Game::Game(Grid& grid) : grid(grid) {
 	camera.rotation = 0.0f;
 	camera.zoom = 2.5f; 
 
+}
+
+Game::~Game()
+{
+	AirRaids.clear();
 }
 
 void Game::LoadSounds() {
@@ -43,6 +50,9 @@ void Game::Draw()
 	else {
 		grid.Draw();
 		Player->Draw();
+		for (const auto& air_raid : AirRaids) {
+			air_raid->Draw();
+		}
 	}
 }
 
@@ -64,6 +74,12 @@ void Game::Update()
 		gameOver = false;
 		soundPlayed = false;  // Reset sound trigger for next death
 	}
+
+	bombTimer += GetFrameTime();  // Accumulate time
+	if (bombTimer >= bombInterval) {
+		spawnAirRaid();  // Spawn a new bombing run
+		bombTimer = 0.0f;  // Reset timer after spawning
+	}
 	
 	if (!gameOver) {
 		//linear interpolation 
@@ -80,11 +96,18 @@ void Game::Update()
 			PlaySound(ambientSound);
 		}
 			
+		
 	}
 	else {
 		StopMusicStream(titleMusic);
 	}
 
+}
+
+void Game::spawnAirRaid()
+{
+	std::cout << "new AirRaid created";
+	AirRaids.emplace_back(std::make_unique<AirRaid>(grid, *this));
 }
 
 

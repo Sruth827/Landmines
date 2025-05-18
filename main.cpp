@@ -13,7 +13,9 @@ int main() {
 	int numRows = 50;
 	int numCols = 30;
 	int cellSize = 20;
-	InitWindow(1080, 1080, "Landmines");
+	int win_height = 1080;
+	int win_width = 1080;
+	InitWindow(win_width, win_height, "Landmines");
 	SetTargetFPS(60);
 
 	Font font = LoadFontEx("Font/armalite.ttf", 64, 0, 0);
@@ -27,7 +29,6 @@ int main() {
 	
 	while (!WindowShouldClose()) {
 		BeginDrawing();
-		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
 		ClearBackground(BLACK);
 		//BeginShaderMode(fogShader);
 		BeginBlendMode(BLEND_ALPHA);
@@ -41,7 +42,8 @@ int main() {
 		EndBlendMode();
 		//EndShaderMode();
 		
-		DrawTextEx(font, "BEHIND ENEMY MINES", { 100, 850 }, 90, 2, WHITE);
+		DrawRectangle(0, 850, win_width, win_height - 850, BROWN);
+		DrawTextEx(font, "BEHIND ENEMY MINES", { 100, 900 }, 90, 2, BLACK);
 		//DrawTextEx(font, "ENEMY", { 700, 120 }, 90, 2, WHITE);
 		//DrawTextEx(font, "MINES", { 700, 210 }, 90, 2, WHITE);
 

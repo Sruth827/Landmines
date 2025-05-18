@@ -129,6 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AirRaid.cpp" />
     <ClCompile Include="grid.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="game.cpp" />
@@ -136,6 +137,7 @@
     <ClCompile Include="playerPosition.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AirRaid.h" />
     <ClInclude Include="grid.h" />
     <ClInclude Include="playerPosition.h" />
     <ClInclude Include="minePosition.h" />
