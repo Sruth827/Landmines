@@ -4,15 +4,24 @@
 #include <iostream>
 #include "playerPosition.h"
 #include "AirRaid.h"
+#include "config.h"
 
 Game::Game(Grid& grid) : grid(grid) {
 	
 	Player = std::make_unique<playerPosition>(grid, *this);
-	this->spawnAirRaid();
-	cellSize = 20;
+	Player->GenerateHeloPosition(grid);
+	
+	//this->spawnAirRaid();
+	cellSize = CELL_SIZE;
 	gameGrid = grid.GetGameGrid();
+
 	gameOver = false;
+	gameWon = false;
+	timeRemaining = 120.0f;
+
+	isMineAhead = false;
 	soundPlayed = false;
+	
 	loopTime = 5.0f;
 	lastPlayTime = 0.0f;
 	ambientTimer = 0.0f;
@@ -22,8 +31,7 @@ Game::Game(Grid& grid) : grid(grid) {
 	camera.target = Vector2{ (float)Player->row, (float)Player->column };
 	camera.offset = Vector2{ 400.0f, 300.0f };  // centered on screen
 	camera.rotation = 0.0f;
-	camera.zoom = 1.25f; 
-	tileFog.resize(tileX * tileY, 0);
+	camera.zoom = 2.0f; 
 
 }
 
@@ -65,12 +73,13 @@ void Game::Draw()
 		grid.Draw();
 		Player->Draw();
 		
-		for (const auto& air_raid : AirRaids) {
+		/*for (const auto& air_raid : AirRaids) {
 			air_raid->Draw();
 		}
 
-		std::cout << "Drawing Fog..." << std::endl;
+		//std::cout << "Drawing Fog..." << std::endl;
 		DrawFog();
+		*/
 	}
 }
 
@@ -81,19 +90,26 @@ void Game::Update(Shader& fogShader)
 	if (gameOver && IsKeyPressed(KEY_R)) {
 		Player->Respawn(grid);
 		gameOver = false;
+		gameWon = false; 
 		soundPlayed = false;
+		timeRemaining = 120.0f;
 		return; // Reset sound trigger for next death
 	}
 
 	bombTimer += GetFrameTime();  // Accumulate time
 	if (bombTimer >= bombInterval) {
-		spawnAirRaid();  // Spawn a new bombing run
-		bombTimer = 0.0f;  // Reset timer after spawning
+		//spawnAirRaid();  
+		bombTimer = 0.0f;  
 	}
 	
-	if (!gameOver) {
-
+	if (!gameOver && !gameWon) {
+		timeRemaining -= GetFrameTime(); 
 		Player->HandleInput();
+		if (timeRemaining <= 0.0f) {
+			timeRemaining = 0.0f; 
+			gameOver = true;
+		}
+
 		if (gameGrid[Player->row][Player->column] == 1) {  // if player hits a mine
 			gameOver = true;
 			std::cerr << "Game Over! Press R to Respawn" << std::endl;
@@ -101,6 +117,9 @@ void Game::Update(Shader& fogShader)
 				PlaySound(death);
 				PlaySound(explosion);
 				soundPlayed = true;  // mark that sound has played
+			}
+			if (Player->row == Player->heloRow && Player->column == Player->heloCol) {
+				gameWon = true;
 			}
 		}
 		if (!gameOver) {
@@ -127,7 +146,7 @@ void Game::Update(Shader& fogShader)
 	}
 }
 
-void Game::spawnAirRaid()
+/*void Game::spawnAirRaid()
 {
 	std::cout << "new AirRaid created";
 	AirRaids.emplace_back(std::make_unique<AirRaid>(grid, *this));
@@ -164,7 +183,7 @@ void Game::UpdateVisibility(const std::unique_ptr<playerPosition>& player) {
 		UpdateTexture(fogTexture.texture, fogPixels.data());
 	}
 }
-
+*/
 
 
 
@@ -178,21 +197,6 @@ void Game::DrawFog()
 }
 
 
-
-/*void Game::CheckCollision(playerPosition& player, const Grid& grid) {
-	const std::vector<std::vector<int>>& gameGrid = grid.GetGameGrid();
-
-	// Ensure row and column are within bounds
-	if (player.row >= 0 && player.row < gameGrid.size() &&
-		player.column >= 0 && player.column < gameGrid[0].size()) {
-
-		if (gameGrid[player.row][player.column] == 1) {  // If player hits a mine
-			std::cerr << "Game Over! Respawning player..." << std::endl;
-			player.Respawn(grid);
-		}
-	}
-}
-*/
 
 void Game::CheckForMineAhead() {
 	std::map<playerPosition::Direction, Vector2> directionOffsets = {
@@ -210,19 +214,22 @@ void Game::CheckForMineAhead() {
 		nextCol >= 0 && nextCol < grid.getCols()) {
 
 		if (grid.GetGameGrid()[nextRow][nextCol] == 1) {
+			isMineAhead = true; 
 			if (!IsSoundPlaying(detector)) {
 				PlaySound(detector);
 				std::cout << "Mine detected! Playing sound...\n";
-
 			}
 		}
 		else {
+			isMineAhead = false; 
 			if (IsSoundPlaying(detector)) {
 				StopSound(detector);
 				std::cout << "No mine ahead! Stopping sound...\n";
-
 			}
 		}
+	}
+	else {
+		isMineAhead = false; 
 	}
 }
 

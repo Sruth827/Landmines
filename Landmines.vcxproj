@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="AirRaid.h" />
     <ClInclude Include="grid.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="playerPosition.h" />
     <ClInclude Include="minePosition.h" />
     <ClInclude Include="game.h" />

@@ -1,13 +1,14 @@
 #include "minePosition.h"	
+#include "config.h"
 #include <set>
 #include <random>
 #include <iostream>
 
 minePosition::minePosition()
 {
-	numRows = 50;
-	numCols = 30;
-	cellSize = 20;
+	numRows = NUM_ROWS;
+	numCols = NUM_COLS;
+	cellSize = CELL_SIZE;
 	generatedPoints = SetMinePositions();
 }
 
@@ -25,12 +26,11 @@ std::set<std::pair<int, int>> minePosition::SetMinePositions()
 
 	// use a set to store unique points
 
-	const int numMines = 250; // change this to the desired number of points
 	std::set< std::pair<int, int >> mines;
 	// check if point already exists
 
 
-	while (static_cast<int>(mines.size()) < numMines) {
+	while (static_cast<int>(mines.size()) < MINE_COUNT) {
 		int x = distX(gen);
 		int y = distY(gen);
 		std::cout << "Trying to place mine at: (" << x << ", " << y << ")" << std::endl;

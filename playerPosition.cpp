@@ -3,6 +3,7 @@
 #include <random>
 #include "playerPosition.h"
 #include "game.h"
+#include "config.h"
 
 
 
@@ -15,10 +16,9 @@ playerPosition::playerPosition(Grid& grid, Game& gameReference) : game(gameRefer
     GenerateStartPosition(grid);
     previousRow = row;
     previousColumn = column;
-    Direction playerDirection = UP;
-   
-
+    playerDirection = UP;
     
+    this->spotlightRadius = SPOTLIGHT_RADIUS;
     //texttures
     playerTexture = LoadTexture("assests/survivor-idle_flashlight_0.png");
     helicopterTexture = LoadTexture("assests/helo1.png");
@@ -215,9 +215,9 @@ void playerPosition::DrawSpotLight(Shader& fogShader, Camera2D& camera){
     Vector2 playerWorldPos = { (float)(column * cellSize) + 40, (float)(row * cellSize) + 37 };
     Vector2 playerScreenPos = GetWorldToScreen2D(playerWorldPos, camera);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightPos"), &playerScreenPos, SHADER_UNIFORM_VEC2);
-    float spotlightRadiusValue = 700.0f;
-    SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightRadius"), &spotlightRadius, SHADER_UNIFORM_FLOAT);
-
+    
+    float effectiveRadius = this->spotlightRadius;
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightRadius"), &effectiveRadius, SHADER_UNIFORM_FLOAT);
  }
 
 bool playerPosition::HasMoved() const

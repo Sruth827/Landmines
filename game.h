@@ -19,9 +19,14 @@ public:
 	void InitializeGraphics();
 	void Draw();
 	void Update(Shader& fogShader); 
-	bool gameOver; 
-	void spawnAirRaid();
-	void UpdateVisibility(const std::unique_ptr<playerPosition>& player);
+	
+	bool gameOver;
+	bool gameWon;
+	float timeRemaining;
+	bool isMineAhead;
+
+	//void spawnAirRaid();
+	//void UpdateVisibility(const std::unique_ptr<playerPosition>& player);
 	Camera2D camera;
 	Vector2 playerCameraPosition;
 	void DrawFog();

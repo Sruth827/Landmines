@@ -30,8 +30,6 @@ public:
 	Vector2 texturePosition;
 	Vector2 spotlightPos;
 	float spotlightRadius;
-
-	
 	
 private:
 	Game& game;
@@ -41,7 +39,6 @@ private:
 	int cellSize;
 	Texture2D playerTexture;
 	Texture2D helicopterTexture;
-	
 	
 };
 
