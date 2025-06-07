@@ -15,9 +15,13 @@ public:
 	void GenerateHeloPosition(const Grid& grid);
 	void Respawn(const Grid& grid);
 	void Draw();
-	void DrawSpotLight(Shader& fogShader);
+	void DrawSpotLight(Shader& fogShader, Camera2D& camera);
+	bool HasMoved() const;
+
 	int row;
 	int column;
+	int previousRow;
+	int previousColumn; 
 	int heloRow;
 	int heloCol;
 	enum Direction { UP, DOWN, LEFT, RIGHT };
@@ -26,6 +30,7 @@ public:
 	Vector2 texturePosition;
 	Vector2 spotlightPos;
 	float spotlightRadius;
+
 	
 	
 private:

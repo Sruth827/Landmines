@@ -55,11 +55,11 @@ void Grid::Print()
 
 void Grid::Draw()
 {
-	DrawTextureEx(ground, { 30, 30 }, 0.0f, 0.8f, WHITE); 
+	//DrawTextureEx(ground, { 30, 30 }, 0.0f, 0.8f, WHITE); 
 	for (int row = 0; row < numRows; row++) {
 		for (int column = 0; column < numCols; column++) {
 			int cellValue = gameGrid[row][column];
-			//DrawRectangle(column * cellSize + 30, row * cellSize + 30, cellSize - 1, cellSize - 1, BROWN);
+			DrawRectangle(column * cellSize + 30, row * cellSize + 30, cellSize - 1, cellSize - 1, BROWN);
 		}
 	}
 

@@ -6,6 +6,7 @@
 #include "AirRaid.h"
 
 Game::Game(Grid& grid) : grid(grid) {
+	
 	Player = std::make_unique<playerPosition>(grid, *this);
 	this->spawnAirRaid();
 	cellSize = 20;
@@ -21,7 +22,8 @@ Game::Game(Grid& grid) : grid(grid) {
 	camera.target = Vector2{ (float)Player->row, (float)Player->column };
 	camera.offset = Vector2{ 400.0f, 300.0f };  // centered on screen
 	camera.rotation = 0.0f;
-	camera.zoom = 2.5f; 
+	camera.zoom = 1.25f; 
+	tileFog.resize(tileX * tileY, 0);
 
 }
 
@@ -41,38 +43,46 @@ void Game::LoadSounds() {
 	SetMusicVolume(titleMusic, 0.2f);	
 }
 
+void Game::InitializeGraphics()
+{
+	int textureWidth = tileX * cellSize + 30;
+	int textureHeight = tileY * cellSize + 30;
+	fogTexture = LoadRenderTexture(textureWidth, textureHeight);
+	SetTextureFilter(fogTexture.texture, TEXTURE_FILTER_BILINEAR);
+
+	// Initialize fogPixels with solid fog
+	fogPixels.resize(textureWidth * textureHeight);
+	for (int i = 0; i < fogPixels.size(); i++) {
+		fogPixels[i] = { 0, 0, 0, 255 }; // opaque black fog
+	}
+	UpdateTexture(fogTexture.texture, fogPixels.data());
+}
+
 
 void Game::Draw()
 {
-	if (gameOver) {
-
-	}
-	else {
+	if (!gameOver) {
 		grid.Draw();
 		Player->Draw();
+		
 		for (const auto& air_raid : AirRaids) {
 			air_raid->Draw();
 		}
+
+		std::cout << "Drawing Fog..." << std::endl;
+		DrawFog();
 	}
 }
 
 
-void Game::Update()
+void Game::Update(Shader& fogShader)
 {
-	if (gameGrid[Player->row][Player->column] == 1) {  // if player hits a mine
-		gameOver = true;
-		std::cerr << "Game Over! Press R to Respawn" << std::endl;
-	}
-	if (gameOver && !soundPlayed) {
-		PlaySound(death);
-		PlaySound(explosion);
-		soundPlayed = true;  // mark that sound has played
-	}
 
 	if (gameOver && IsKeyPressed(KEY_R)) {
 		Player->Respawn(grid);
 		gameOver = false;
-		soundPlayed = false;  // Reset sound trigger for next death
+		soundPlayed = false;
+		return; // Reset sound trigger for next death
 	}
 
 	bombTimer += GetFrameTime();  // Accumulate time
@@ -82,32 +92,89 @@ void Game::Update()
 	}
 	
 	if (!gameOver) {
-		//linear interpolation 
-		Player -> HandleInput();
-		CheckForMineAhead();
-		camera.target.x += (Player->column * cellSize - camera.target.x) * 0.1f;
-		camera.target.y += (Player->row * cellSize - camera.target.y) * 0.1f;
 
-		UpdateMusicStream(titleMusic);
-		if (!IsMusicStreamPlaying(titleMusic)) {
-			PlayMusicStream(titleMusic);
+		Player->HandleInput();
+		if (gameGrid[Player->row][Player->column] == 1) {  // if player hits a mine
+			gameOver = true;
+			std::cerr << "Game Over! Press R to Respawn" << std::endl;
+			if (!soundPlayed) {
+				PlaySound(death);
+				PlaySound(explosion);
+				soundPlayed = true;  // mark that sound has played
+			}
 		}
-		if (!IsSoundPlaying(ambientSound)) {
-			PlaySound(ambientSound);
-		}
-			
-		
-	}
-	else {
-		StopMusicStream(titleMusic);
-	}
+		if (!gameOver) {
+			CheckForMineAhead();
+			Player->DrawSpotLight(fogShader, this->camera);
+			float screenHeight = (float)GetScreenHeight();
+			SetShaderValue(fogShader, GetShaderLocation(fogShader, "screenHeight"), &screenHeight, SHADER_UNIFORM_FLOAT);
 
+			camera.target.x += (Player->column * cellSize - camera.target.x) * 0.1f;
+			camera.target.y += (Player->row * cellSize - camera.target.y) * 0.1f;
+
+			UpdateMusicStream(titleMusic);
+			if (!IsMusicStreamPlaying(titleMusic)) {
+				PlayMusicStream(titleMusic);
+			}
+			if (!IsSoundPlaying(ambientSound)) {
+				PlaySound(ambientSound);
+			}
+		}
+		else {
+			StopMusicStream(titleMusic);
+
+		}
+	}
 }
 
 void Game::spawnAirRaid()
 {
 	std::cout << "new AirRaid created";
 	AirRaids.emplace_back(std::make_unique<AirRaid>(grid, *this));
+}
+
+void Game::UpdateVisibility(const std::unique_ptr<playerPosition>& player) {
+	int visibilityRadius = 20;
+	bool updated = false;
+	int textureWidth = tileX * cellSize;
+
+	for (int y = player->row - visibilityRadius; y <= player->row + visibilityRadius; y++) {
+		for (int x = player->column - visibilityRadius; x <= player->column + visibilityRadius; x++) {
+			if (x >= 0 && x < tileX && y >= 0 && y < tileY) {
+				int index = y * tileX + x;
+				if (tileFog[index] != 1) {  // if this tile hasn't been cleared yet
+					tileFog[index] = 1;
+
+					// Update pixel region for the cell:
+					for (int py = 0; py < cellSize; py++) {
+						for (int px = 0; px < cellSize; px++) {
+							int pixelIndex = (y * cellSize + py) * textureWidth + (x * cellSize + px);
+							if (pixelIndex < fogPixels.size()) {
+								fogPixels[pixelIndex] = { 0, 0, 0, 0 };  // fully transparent
+							}
+						}
+					}
+					updated = true;
+				}
+			}
+		}
+	}
+
+	if (updated) {
+		UpdateTexture(fogTexture.texture, fogPixels.data());
+	}
+}
+
+
+
+
+
+void Game::DrawFog()
+{
+	Rectangle sourceRect = { 0, 0, (float)fogTexture.texture.width, (float)fogTexture.texture.height };
+	Rectangle destRect = { 0, 0, (float)(tileX * cellSize), (float)(tileY * cellSize) };
+	DrawTexturePro(fogTexture.texture, sourceRect, destRect, { 0.0f, 0.0f }, 0.0f, WHITE);
+
 }
 
 
@@ -158,6 +225,8 @@ void Game::CheckForMineAhead() {
 		}
 	}
 }
+
+
 
 
 

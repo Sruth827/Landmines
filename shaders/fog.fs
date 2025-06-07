@@ -1,22 +1,30 @@
 #version 330
 
-uniform sampler2D texture0;
-uniform vec2 spotlightPos;  //  Spotlight position
-uniform float spotlightRadius;  //  Spotlight size
-
 in vec2 fragTexCoord;
+in vec4 fragColor;
+
 out vec4 finalColor;
 
-void main() {
-    vec2 lightDist = fragTexCoord - spotlightPos;
-    float dist = length(lightDist);
+// Uniforms from C++
+uniform sampler2D texture0;
+uniform vec2 spotlightPos;
+uniform float spotlightRadius;
+uniform float screenHeight; // <-- NEW: To fix the Y-axis
 
-    float spotlightFactor = smoothstep(spotlightRadius, 0.0, dist);  //  Smooth light fade
-
+void main()
+{
     vec4 texColor = texture(texture0, fragTexCoord);
-    
-    // Apply transparency outside the spotlight area
-    texColor.a *= spotlightFactor;  // Reduce alpha for spotlight effect
 
-    finalColor = texColor;
+    // Flip the shader's Y-coordinate to match Raylib's screen coordinates
+    vec2 flippedFragCoord = vec2(gl_FragCoord.x, screenHeight - gl_FragCoord.y);
+
+    // Calculate distance using the correctly flipped coordinate
+    float distance = length(flippedFragCoord - spotlightPos);
+    
+    vec4 fogColor = vec4(0.0, 0.0, 0.0, 1.0); // Black fog
+
+    // Smoothly blend from light to fog
+    float visibility = 1.0 - smoothstep(spotlightRadius, spotlightRadius + 40.0, distance);
+
+    finalColor = mix(fogColor, texColor * fragColor, visibility);
 }

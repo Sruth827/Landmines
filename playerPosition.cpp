@@ -5,6 +5,7 @@
 #include "game.h"
 
 
+
 playerPosition::playerPosition(Grid& grid, Game& gameReference) : game(gameReference) {
     
     cellSize = grid.getCellSize();
@@ -12,12 +13,11 @@ playerPosition::playerPosition(Grid& grid, Game& gameReference) : game(gameRefer
     numCols = grid.getCols();
     const std::vector<std::vector<int>>& gameGrid = grid.GetGameGrid();
     GenerateStartPosition(grid);
-    
+    previousRow = row;
+    previousColumn = column;
     Direction playerDirection = UP;
    
-    //shader variables
-    spotlightPos = texturePosition;
-    float spotlightRadius = 0.05f;
+
     
     //texttures
     playerTexture = LoadTexture("assests/survivor-idle_flashlight_0.png");
@@ -75,6 +75,9 @@ void playerPosition::RotatePlayerRight() {
 }
 
 void playerPosition::MovePlayerForward() {
+    previousRow = row;
+    previousColumn = column; 
+
     if (playerDirection == Direction::UP && row > 0) {
         row -= 1;
     }
@@ -87,7 +90,6 @@ void playerPosition::MovePlayerForward() {
     else if (playerDirection == Direction::RIGHT && column < numCols - 1) {
         column += 1;
     }
-    game.Update();
 }
 
 static bool isSafePosition(int row, int col, const std::vector<std::vector<int>>& gameGrid) {
@@ -208,11 +210,21 @@ void playerPosition::Draw() {
         WHITE);
 }
 
-void playerPosition::DrawSpotLight(Shader& fogShader){
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightPos"), &texturePosition, SHADER_UNIFORM_VEC2);
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightRadius"), &spotlightRadius, SHADER_UNIFORM_FLOAT);
+void playerPosition::DrawSpotLight(Shader& fogShader, Camera2D& camera){
+        
+    Vector2 playerWorldPos = { (float)(column * cellSize) + 40, (float)(row * cellSize) + 37 };
+    Vector2 playerScreenPos = GetWorldToScreen2D(playerWorldPos, camera);
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightPos"), &playerScreenPos, SHADER_UNIFORM_VEC2);
+    float spotlightRadiusValue = 700.0f;
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "spotlightRadius"), &spotlightRadius, SHADER_UNIFORM_FLOAT);
 
  }
+
+bool playerPosition::HasMoved() const
+{
+    return previousRow != row || previousColumn != column;
+}
+
 
 
 

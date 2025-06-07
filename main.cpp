@@ -26,21 +26,21 @@ int main() {
 	// Set initial fog values
 	Grid battleField = Grid(numRows, numCols, cellSize);
 	Game game(battleField);
+	game.InitializeGraphics();
 	
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(BLACK);
-		//BeginShaderMode(fogShader);
-		BeginBlendMode(BLEND_ALPHA);
+		BeginShaderMode(fogShader);
 		
 		//game.GetPlayer().DrawSpotLight(fogShader);
 		BeginMode2D(game.camera);
-		game.Update();
-		
+		game.Update(fogShader);
 		game.Draw();
 		EndMode2D();
-		EndBlendMode();
-		//EndShaderMode();
+
+
+		EndShaderMode();
 		
 		DrawRectangle(0, 850, win_width, win_height - 850, BROWN);
 		DrawTextEx(font, "BEHIND ENEMY MINES", { 100, 900 }, 90, 2, BLACK);

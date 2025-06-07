@@ -4,6 +4,8 @@
 #include <memory>
 #include "grid.h"
 #include "AirRaid.h"
+#include <map>
+#include <unordered_set>
 
 class playerPosition;
 class AirRaid;
@@ -14,14 +16,19 @@ public:
 	~Game();
 	playerPosition& GetPlayer() { return *Player; }
 	void LoadSounds();
+	void InitializeGraphics();
 	void Draw();
-	void Update(); 
+	void Update(Shader& fogShader); 
 	bool gameOver; 
 	void spawnAirRaid();
-
-
+	void UpdateVisibility(const std::unique_ptr<playerPosition>& player);
 	Camera2D camera;
 	Vector2 playerCameraPosition;
+	void DrawFog();
+	int tileX;
+	int tileY;
+	std::vector<Color> fogPixels;
+	RenderTexture2D fogTexture;
 
 private:
 	Grid& grid; 
@@ -44,4 +51,11 @@ private:
 
 	float bombTimer = 0.0f;  // Tracks time since last bombing run
 	float bombInterval = 16.0f;  // Time between bombing runs (seconds)
+	std::vector<unsigned char> tileFog;
+
+
+
+	
+
+
 };

@@ -64,7 +64,7 @@ float AirRaid::Distance(Vector2 a, Vector2 b) {
 
 void AirRaid::Draw()
 {
-	DrawTextureEx(bomberTexture, { (float)(currentTarget.x * cellSize), (float)(currentTarget.y * cellSize) }, 0.0f, 1.0f, WHITE);
+	DrawTextureEx(bomberTexture, { (float)(currentTarget.x * cellSize), (float)(currentTarget.y * cellSize) }, 0.0f, 0.15f, WHITE);
 
 	
 
