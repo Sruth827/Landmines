@@ -1,11 +1,10 @@
-#version 330
+#version 100
+precision mediump float; 
 
 // Input from the vertex shader
-in vec2 fragTexCoord;
-in vec4 fragColor;
+varying vec2 fragTexCoord;
+varying vec4 fragColor;
 
-// Output color for the pixel
-out vec4 finalColor;
 
 // Uniforms (values sent from your C++ code)
 uniform sampler2D texture0;
@@ -16,7 +15,7 @@ uniform float screenHeight;
 void main()
 {
     // Get the original color of the game world pixel
-    vec4 texColor = texture(texture0, fragTexCoord);
+    vec4 texColor = texture2D(texture0, fragTexCoord);
 
     // --- Night Vision Effect Logic ---
 
@@ -46,5 +45,7 @@ void main()
     float visibility = 1.0 - smoothstep(spotlightRadius, spotlightRadius + 40.0, distance);
 
     // Mix the TINTED color with the fog color based on the visibility
-    finalColor = mix(fogColor, tintedColor * fragColor, visibility);
+    gl_FragColor = mix(fogColor, tintedColor * fragColor, visibility);
+
+    
 }

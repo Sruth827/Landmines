@@ -20,8 +20,8 @@ playerPosition::playerPosition(Grid& grid, Game& gameReference) : game(gameRefer
     
     this->spotlightRadius = SPOTLIGHT_RADIUS;
     //texttures
-    playerTexture = LoadTexture("assests/survivor-idle_flashlight_0.png");
-    helicopterTexture = LoadTexture("assests/helo1.png");
+    playerTexture = LoadTexture("assets/survivor-idle_flashlight_0.png");
+    helicopterTexture = LoadTexture("assets/helo1.png");
 }
 
 

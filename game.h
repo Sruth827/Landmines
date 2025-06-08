@@ -44,6 +44,7 @@ private:
 	std::vector<std::vector<int>>gameGrid;
 	std::vector<std::unique_ptr<AirRaid>> AirRaids;
 	bool soundPlayed;
+	bool audioUnlocked;
 	Sound explosion;
 	Sound death;
 	Sound ambientSound;

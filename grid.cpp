@@ -11,7 +11,7 @@ Grid::Grid(int Rows, int Columns, int CellSize)
 	cellSize = CellSize;
 	minePosition mineField;
 	generatedPoints = mineField.getGeneratedPoints();
-	ground = LoadTexture("assests/muddy_ground.png");
+	ground = LoadTexture("assets/muddy_ground.png");
 	Initialize();
 }
 

@@ -123,15 +123,16 @@ int main() {
 		// Draw text labels for the keys
 		DrawTextEx(font, "ROTATE/FORWARD/ROTATE", { labelsRec.x, labelsRec.y }, 10, 2, textColor);
 		
-		
-		if (game.gameOver) {
-			DrawTextEx(font, "GAMEOVER!", {300, 400}, 100, 2, WHITE);
-			DrawTextEx(font, "Press R to Respawn", {100, 500}, 100, 2, WHITE);
-		}
 		if (game.gameWon) {
 			DrawTextEx(font, "YOU WIN!", { 350, 400 }, 100, 2, WHITE);
 			DrawTextEx(font, "EXTRACTION REACHED", { 50, 500 }, 100, 2, WHITE);
+			DrawTextEx(font, "Press R to Play Again!", { 100, 600 }, 100, 2, WHITE);
 		}
+		else if (game.gameOver) {
+			DrawTextEx(font, "GAMEOVER!", {300, 400}, 100, 2, WHITE);
+			DrawTextEx(font, "Press R to Respawn", {100, 500}, 100, 2, WHITE);
+		}
+		
 		
 		
 		EndDrawing(); 

@@ -21,6 +21,7 @@ Game::Game(Grid& grid) : grid(grid) {
 
 	isMineAhead = false;
 	soundPlayed = false;
+	audioUnlocked = false;
 	
 	loopTime = 5.0f;
 	lastPlayTime = 0.0f;
@@ -43,9 +44,9 @@ Game::~Game()
 void Game::LoadSounds() {
 	explosion = LoadSound("sfx/hq-explosion.ogg");
 	death = LoadSound("sfx/scream.ogg");
-	titleMusic = LoadMusicStream("sfx/titlemusic.wav");
+	titleMusic = LoadMusicStream("sfx/titlemusic.ogg");
 	ambientSound = LoadSound("sfx/ambient war sfx.ogg");
-	detector = LoadSound("sfx/detectorsound.wav");
+	detector = LoadSound("sfx/detectorsound.ogg");
 	SetSoundVolume(ambientSound, 0.6f);
 	SetSoundVolume(explosion, 0.6f);
 	SetMusicVolume(titleMusic, 0.2f);	
@@ -86,63 +87,102 @@ void Game::Draw()
 
 void Game::Update(Shader& fogShader)
 {
+#if defined(PLATFORM_WEB)
+	// This is the check to unlock audio.
+	if (!audioUnlocked && GetKeyPressed() != 0)
+	{
+		printf("USER INPUT DETECTED: Unlocking audio now.\n");
+		audioUnlocked = true;
+}
+#else
+	// On desktop, audio is always unlocked.
+	audioUnlocked = true;
+#endif
 
-	if (gameOver && IsKeyPressed(KEY_R)) {
+	// This lets us test playing a sound with the 'J' key.
+	if (IsKeyPressed(KEY_J))
+	{
+		printf("--- 'J' key pressed! --- \n");
+		if (audioUnlocked)
+		{
+			printf("Attempting to play explosion sound because audio IS unlocked.\n");
+			PlaySound(explosion);
+		}
+		else
+		{
+			printf("Did NOT play explosion sound because audio is STILL locked.\n");
+		}
+	}
+	// First, handle the respawn input, as it resets the entire game state.
+	if ((gameOver || gameWon) && IsKeyPressed(KEY_R)) {
 		Player->Respawn(grid);
+		Player->GenerateHeloPosition(grid); // Re-place the helicopter for a new round
 		gameOver = false;
-		gameWon = false; 
+		gameWon = false;
 		soundPlayed = false;
-		timeRemaining = 120.0f;
-		return; // Reset sound trigger for next death
+		timeRemaining = 120.0f; // Reset timer
+#if defined(PLATFORM_WEB)
+		audioUnlocked = false;
+#endif
+		return; // Exit early to start the next frame fresh
 	}
 
-	bombTimer += GetFrameTime();  // Accumulate time
-	if (bombTimer >= bombInterval) {
-		//spawnAirRaid();  
-		bombTimer = 0.0f;  
-	}
-	
+	// --- Main Game Logic ---
+	// Only run the main logic if the game is not over and not won yet.
 	if (!gameOver && !gameWon) {
-		timeRemaining -= GetFrameTime(); 
-		Player->HandleInput();
+
+		// 1. Update Timer & Check for Time-Out Loss Condition
+		timeRemaining -= GetFrameTime();
 		if (timeRemaining <= 0.0f) {
-			timeRemaining = 0.0f; 
-			gameOver = true;
+			timeRemaining = 0.0f;
+			gameOver = true; // Player loses if time runs out
 		}
 
-		if (gameGrid[Player->row][Player->column] == 1) {  // if player hits a mine
-			gameOver = true;
-			std::cerr << "Game Over! Press R to Respawn" << std::endl;
-			if (!soundPlayed) {
-				PlaySound(death);
-				PlaySound(explosion);
-				soundPlayed = true;  // mark that sound has played
-			}
-			if (Player->row == Player->heloRow && Player->column == Player->heloCol) {
-				gameWon = true;
-			}
-		}
-		if (!gameOver) {
-			CheckForMineAhead();
-			Player->DrawSpotLight(fogShader, this->camera);
-			float screenHeight = (float)GetScreenHeight();
-			SetShaderValue(fogShader, GetShaderLocation(fogShader, "screenHeight"), &screenHeight, SHADER_UNIFORM_FLOAT);
+		// 2. Handle Player Input
+		Player->HandleInput();
 
-			camera.target.x += (Player->column * cellSize - camera.target.x) * 0.1f;
-			camera.target.y += (Player->row * cellSize - camera.target.y) * 0.1f;
-
+		//Audio fix
+		if (audioUnlocked)
+		{
+			// This is the ONLY place we update the music stream now.
 			UpdateMusicStream(titleMusic);
-			if (!IsMusicStreamPlaying(titleMusic)) {
-				PlayMusicStream(titleMusic);
-			}
-			if (!IsSoundPlaying(ambientSound)) {
-				PlaySound(ambientSound);
-			}
-		}
-		else {
-			StopMusicStream(titleMusic);
 
+			// This is your original "keep-alive" logic, which is great for looping.
+			// It will now work on the web because it's inside the 'audioUnlocked' gate.
+			if (!IsMusicStreamPlaying(titleMusic)) { PlayMusicStream(titleMusic); }
+			if (!IsSoundPlaying(ambientSound)) { PlaySound(ambientSound); }
 		}
+
+		// 3. Check Game State After the Move
+		// Check for WIN condition FIRST.
+		if (Player->row == Player->heloRow && Player->column == Player->heloCol) {
+			gameWon = true;
+			StopMusicStream(titleMusic); // Stop the tense music on win
+		}
+		// Only if the player hasn't won, check for MINE collision (lose condition).
+		else if (gameGrid[Player->row][Player->column] == 1) {
+			gameOver = true;
+		}
+
+		// 4. Handle Other Per-Frame Updates (like audio, camera, etc.)
+		// Check the game state again in case it just changed in the step above.
+		CheckForMineAhead();
+		Player->DrawSpotLight(fogShader, this->camera);
+
+		float screenHeight = (float)GetScreenHeight();
+		SetShaderValue(fogShader, GetShaderLocation(fogShader, "screenHeight"), &screenHeight, SHADER_UNIFORM_FLOAT);
+
+		camera.target.x += (Player->column * cellSize - camera.target.x) * 0.1f;
+		camera.target.y += (Player->row * cellSize - camera.target.y) * 0.1f;
+
+	}
+
+	// --- Handle Audio For End States ---
+	if (gameOver && !soundPlayed) {
+		StopMusicStream(titleMusic);
+		PlaySound(death);
+		PlaySound(explosion);
+		soundPlayed = true;
 	}
 }
 
