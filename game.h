@@ -19,7 +19,7 @@ public:
 	void InitializeGraphics();
 	void Draw();
 	void Update(Shader& fogShader); 
-	
+	bool audioUnlocked;
 	bool gameOver;
 	bool gameWon;
 	float timeRemaining;
@@ -44,7 +44,8 @@ private:
 	std::vector<std::vector<int>>gameGrid;
 	std::vector<std::unique_ptr<AirRaid>> AirRaids;
 	bool soundPlayed;
-	bool audioUnlocked;
+	
+	
 	Sound explosion;
 	Sound death;
 	Sound ambientSound;
